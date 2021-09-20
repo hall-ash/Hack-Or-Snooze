@@ -26,7 +26,6 @@ describe('User unit tests', () => {
   })
 
   describe('_sendReqToFavoritesEndpoint tests', () => {
-    
 
     it(`should add a story to the user favorites array in the API when requestMethod is POST
         and return true upon a successful response`, async () => {

@@ -45,9 +45,10 @@
   <div class="navbar-brand">
     <a class="nav-link" href="#" id="nav-all">Hack or Snooze</a>
   </div>
-  <div class ="main-nav-links">
+  <div class ="main-nav-links hidden">
     <a class="nav-link" href="#" id="nav-submit-story">submit</a>
     <a class="nav-link" href="#" id="nav-show-favorites">favorites</a>
+    <a class="nav-link" href="#" id="#nav-show-submissions">submissions</a>
   </div>
   <div class="nav-right">
     <a class="nav-link" href="#" id="nav-login">login / signup</a>
@@ -59,11 +60,36 @@
 <!-- area for stories (all stories, user stories, favorites) -->
 <section class="stories-container container">
 
+  <!-- New story form -->
+  <form action="" class="hidden" id="new-story-form">
+    <h4>Submit</h4>
+    <div>
+      <label for="story-author">author</label>
+      <input id="story-author" required placeholder="author name">
+    </div>
+    <div>
+      <label for="story-title">title</label>
+      <input id="story-title" required placeholder="story title">
+    </div>
+    <div>
+      <label for="story-url">url</label>
+      <input id="story-url" required type="url" placeholder="story url">
+    </div>
+    <button type="submit">submit</button>
+    <hr>
+  </form>
+
   <!-- loading message (removed by JS after stories loaded) -->
   <div id="stories-loading-msg">Loading&hellip;</div>
 
   <!-- List of all stories -->
   <ol id="all-stories-list" class="stories-list"></ol>
+
+  <!-- List of user favorited stories -->
+  <ol id="fav-stories-list" class="stories-list"></ol>
+
+  <!-- List of user submitted stories -->
+  <ol id="submitted-stories-list" class="stories-list"></ol>
 
 </section>
 
@@ -108,21 +134,18 @@
   </form>
 </section>
 
-<!-- New Story form -->
-<section class="new-story-form-container container">
-  <form action="#" id="new-story-form" class="new-story-form hidden" method="post">
-    <h4>Add a story</h4>
-    <div class="story-title-input">
-      <label for="story-title">title</label>
-      <input id="story-title" name="story-title" autocapitalize="words">
-    </div>
-    <div class="story-url-input">
-      <label for="story-url">url</label>
-      <input id="story-url" name="story-url" type="url">
-    </div>
-    <button type="submit">Post</button>
-  </form>
+<!-- User profile -->
+<section id="user-profile" class="hidden">
+  <div class="user-profile-box container">
+    <h4>User Profile:</h4>
+    <section>
+      <div>name: <span id="profile-name"></span></div>
+      <div>user: <span id="profile-username"></span></div>
+      <div>created: <span id="profile-creation-date"></span></div>
+    </section>
+  </div>
 </section>
+
 
 
 <!-- Library JS & our JS -->

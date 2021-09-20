@@ -65,6 +65,30 @@ function navShowFavoritesClick(evt) {
   console.debug("navShowFavoritesClick", evt);
 
   hidePageComponents();
+
+  putFavoriteStoriesOnPage();
+
+  $favStoriesList.show();
 }
 
 $navShowFavorites.on('click', navShowFavoritesClick);
+
+function navShowSubmissionsClick(evt) {
+  console.debug("navShowSumbissionsClick", evt);
+
+  hidePageComponents();
+
+  putSubmittedStoriesOnPage();
+
+  $submittedStoriesList.show();
+}
+
+$navShowSubmissions.on('click', navShowSubmissionsClick);
+
+function navUserProfileClick(evt) {
+  console.debug('navUserProfileClick', evt);
+  hidePageComponents();
+  $userProfile.show();
+}
+
+$navUserProfile.on('click', navUserProfileClick);

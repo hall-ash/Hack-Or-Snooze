@@ -47,10 +47,10 @@ function createFavoriteStar() {
     if (!currentUser) return;
 
     // user is logged in:
-
+    
     // get story from storyId
     const storyId = $(this).parents('li').attr('id');
-    const story = storyList.stories.filter(s => s.storyId === storyId);
+    const story = storyList.stories.get(storyId);
 
     // toggle star's fill property
     $(this).toggleClass('bi-star bi-star-fill');
@@ -107,12 +107,14 @@ function generateStoryMarkup(story) {
  * Precondition: Story markup must exist for favorited stories before calling.
  */
 function showFavoriteStarsForCurrentUser() {
-  currentUser.favorites.forEach(story => {
+  for (const storyId of currentUser.favorites.keys()) {
     // get story markup
-    $storyMarkup = $(`#${story.storyId}`);
+    $storyMarkup = $(`#${storyId}`);
     $storyMarkup.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
-  })
+  }
+   
 }
+
 
 /** Gets list of stories from server, generates their HTML, and puts on page. */
 
@@ -122,9 +124,9 @@ function putStoriesOnPage() {
   $allStoriesList.empty();
 
   // loop through all of our stories and generate HTML for them
-  for (let story of storyList.stories) {
+  for (const story of storyList.stories.values()) {
     const $story = generateStoryMarkup(story);
-    $allStoriesList.prepend($story);
+    $allStoriesList.append($story);
   }
 
   // if user is logged in, show filled-in stars next to their favorite stories
@@ -136,16 +138,17 @@ function putStoriesOnPage() {
 /** Gets new story data from the new story form, adds the new story to the storyList
  *  and displays it on the page.
 */
-async function putNewStoryOnPage(evt) {
-  console.debug("putnewStoryOnPage", evt);
+async function submitNewStory(evt) {
+  console.debug("submitNewStory", evt);
 
   evt.preventDefault();
 
   const title = $("#story-title").val();
   const url = $("#story-url").val();
-  const author = currentUser.name;
+  const author = $("#story-author").val();
+  const username = currentUser.username;
 
-  const story = await storyList.addStory(currentUser, { title, author, url })
+  const story = await storyList.addStory(currentUser, { title, url, author, username })
 
   if (story) {
     const $story = generateStoryMarkup(story); // generate story html
@@ -154,34 +157,12 @@ async function putNewStoryOnPage(evt) {
   else {
     alert('Error submitting story. Try again.')
   }
+
+  $submitForm.hide();
+  $submitForm.trigger('reset');
 }
 
 $newStoryForm.on('submit', putNewStoryOnPage);
-
-
-/**
- * Adds or removes the selected story from the current, authenticated
- * user's list of favorite stories.
- */
-async function toggleFavorite(evt) {
-  console.debug("toggleFavorite", evt);
-
-  const $favLink = $(evt.target);
-
-  // get the storyId of the parent 'li' element
-  const storyId = $favLink.parents('li').attr('id');
-
-  if ($favLink.text() === 'favorite') {
-    await currentUser.addToFavorites(storyId);
-    $favLink.text('un-favorite');
-  }
-  else if ($(evt).text() === 'un-favorite') {
-    await currentUser.removeFromFavorites(storyId)
-    $favLink.text('favorite');
-  }
-}
-
-$allStoriesList.on('click', '.story-toggle-favorite a', toggleFavorite);
 
 
 /**
@@ -190,15 +171,40 @@ $allStoriesList.on('click', '.story-toggle-favorite a', toggleFavorite);
 function putFavoriteStoriesOnPage(evt) {
   console.debug("putFavoriteStoriesOnPage", evt);
 
-  $allStoriesList.empty();
+  $favStoriesList.empty();
 
   // loop through all user's favorited stories and generate HTML for them
-  for (let fav of currentUser.favorites) {
-    const $fav = generateStoryMarkup(fav);
-    $allStoriesList.append($fav);
+  if (currentUser.favorites.length) {
+    for (const fav of currentUser.favorites.values()) {
+      const $fav = generateStoryMarkup(fav);
+      $favStoriesList.append($fav);
+    }
   }
+  else {
+    $favStoriesList.append('<h4>No favorites added.</h4>')
+  }
+ 
 
-  $allStoriesList.show();
+  $favStoriesList.show();
 }
 
 $navShowFavorites.on('click', putFavoriteStoriesOnPage);
+
+
+function putSubmittedStoriesOnPage(evt) {
+  console.debug("putSubmittedStoriesOnPage", evt);
+
+  $submittedStoriesList.empty();
+
+  if (currentUser.ownStories.length) {
+    for (const story of currentUser.ownStories.values()) {
+      const $story = generateStoryMarkup(story);
+      $submittedStoriesList.append($story);
+    }
+  }
+  else {
+    $submittedStoriesList.append('<h4>No submissions.</h4>')
+  }
+
+  $submittedStoriesList.show();
+}

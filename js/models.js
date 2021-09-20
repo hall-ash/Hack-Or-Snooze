@@ -58,10 +58,12 @@ class StoryList {
       method: "GET",
     });
 
-    // turn plain old story objects from API into instances of Story class
-    const stories = response.data.stories.map(story => new Story(story));
-
-    // build an instance of our own class using the new array of stories
+    // build stories map: key = storyId, value = instance of Story class
+    const stories = response.data.stories.reduce((storyMap, story) => {
+      return storyMap.set(story.storyId, new Story(story))
+    }, new Map())
+    
+    // build an instance of our own class using the new map of stories
     return new StoryList(stories);
   }
 
@@ -92,8 +94,8 @@ class StoryList {
         const newStory = new Story(response.data.story);
 
         // update storyList.stories & user's stories
-        this.stories.push(newStory);
-        user.ownStories.push(newStory);
+        this.stories.set(newStory.storyId, newStory);
+        user.ownStories.set(newStory.storyId, newStory);
 
         return newStory;
       }
@@ -132,9 +134,9 @@ class StoryList {
       if (response.status === 200) {
 
         // remove story from all story lists
-        this.stories = this.stories.filter(s => s.storyId !== storyId);
-        user.ownStories = user.ownStories.filter(s => s.storyId !== storyId);
-        user.favorites = user.favorites.filter(s => s.storyId !== storyId);
+        this.stories.delete(storyId);
+        user.ownStories.delete(storyId);
+        user.favorites.delete(storyId);
       }
       else {
         throw new Error('response status:', response.status);
@@ -165,7 +167,7 @@ class User {
                 name,
                 createdAt,
                 favorites = [],
-                ownStories = []
+                ownStories = [],
               },
               token) {
     this.username = username;
@@ -173,8 +175,13 @@ class User {
     this.createdAt = createdAt;
 
     // instantiate Story instances for the user's favorites and ownStories
-    this.favorites = favorites.map(s => new Story(s));
-    this.ownStories = ownStories.map(s => new Story(s));
+    this.favorites = favorites.reduce((storyMap, story) => {
+      return storyMap.set(story.storyId, new Story(story));
+    }, new Map());
+
+    this.ownStories = ownStories.reduce((storyMap, story) => {
+      return storyMap.set(story.storyId, new Story(story));
+    }, new Map());
 
     // store the login token on the user so it's easy to find for API calls.
     this.loginToken = token;
@@ -312,7 +319,7 @@ class User {
       
       if (responseSuccessful) {
          // add story to user's favorites 
-        this.favorites.push(story);
+         this.favorites.set(story.storyId, story);
         console.log('added to favs successfully')
       } 
      
@@ -331,7 +338,7 @@ class User {
       
       if (responseSuccessful) {
         // remove story from user's favorites 
-        this.favorites = this.favorites.filter(s => s.storyId !== story.storyId);
+        this.favorites.delete(story.storyId);
         console.log('removed from favs successfully')
       }
      

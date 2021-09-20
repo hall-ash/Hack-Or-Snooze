@@ -116,10 +116,22 @@ function saveUserCredentialsInLocalStorage() {
  * - generate the user profile part of the page
  */
 
-function updateUIOnUserLogin() {
+async function updateUIOnUserLogin() {
   console.debug("updateUIOnUserLogin");
 
+  hidePageComponents();
+
+  putStoriesOnPage();
   $allStoriesList.show();
 
   updateNavOnLogin();
+  createUserProfile();
+}
+
+function createUserProfile() {
+  console.debug('createUserProfile');
+
+  $('#profile-name').text(currentUser.name);
+  $('#profile-username').text(currentUser.username);
+  $('#profile-created-date').text(currentUser.createdAt.slice(0, 10));
 }
