@@ -109,7 +109,8 @@ function generateStoryMarkup(story) {
 function showFavoriteStarsForCurrentUser() {
   for (const storyId of currentUser.favorites.keys()) {
     // get story markup
-    $storyMarkup = $(`#${storyId}`);
+    console.log(storyId);
+    const $storyMarkup = $(`#${storyId}`);
     $storyMarkup.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
   }
    
@@ -129,8 +130,10 @@ function putStoriesOnPage() {
     $allStoriesList.append($story);
   }
 
+  console.log('currentuser', currentUser);
+
   // if user is logged in, show filled-in stars next to their favorite stories
-  if (currentUser) showFavoriteStarsForCurrentUser()
+  if (currentUser && $allStoriesList[0].childElementCount) showFavoriteStarsForCurrentUser()
 
   $allStoriesList.show();
 }
@@ -158,11 +161,11 @@ async function submitNewStory(evt) {
     alert('Error submitting story. Try again.')
   }
 
-  $submitForm.hide();
-  $submitForm.trigger('reset');
+  $newStoryForm.hide();
+  $newStoryForm.trigger('reset');
 }
 
-$newStoryForm.on('submit', putNewStoryOnPage);
+$newStoryForm.on('submit', submitNewStory);
 
 
 /**
@@ -173,11 +176,14 @@ function putFavoriteStoriesOnPage(evt) {
 
   $favStoriesList.empty();
 
+  console.log(currentUser.favorites);
   // loop through all user's favorited stories and generate HTML for them
-  if (currentUser.favorites.length) {
+  if (currentUser.favorites.size) {
     for (const fav of currentUser.favorites.values()) {
-      const $fav = generateStoryMarkup(fav);
-      $favStoriesList.append($fav);
+      console.log(fav);
+      const $favMarkup = generateStoryMarkup(fav);
+      $favMarkup.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
+      $favStoriesList.append($favMarkup);
     }
   }
   else {
@@ -196,7 +202,7 @@ function putSubmittedStoriesOnPage(evt) {
 
   $submittedStoriesList.empty();
 
-  if (currentUser.ownStories.length) {
+  if (currentUser.ownStories.size) {
     for (const story of currentUser.ownStories.values()) {
       const $story = generateStoryMarkup(story);
       $submittedStoriesList.append($story);
@@ -208,3 +214,5 @@ function putSubmittedStoriesOnPage(evt) {
 
   $submittedStoriesList.show();
 }
+
+$navShowSubmissions.on('click', putSubmittedStoriesOnPage);

@@ -92,3 +92,6 @@ function navUserProfileClick(evt) {
 }
 
 $navUserProfile.on('click', navUserProfileClick);
+
+
+
