@@ -29,7 +29,9 @@ $navLogin.on("click", navLoginClick);
 
 function updateNavOnLogin() {
   console.debug("updateNavOnLogin");
-  $(".main-nav-links").show();
+  $navShowFavorites.show();
+  $navShowSubmissions.show();
+  $navSubmitStory.show();
   $navLogin.hide();
   $navLogOut.show();
   $navUserProfile.text(`${currentUser.username}`).show();
@@ -50,6 +52,10 @@ function navSubmitStoryClick(evt) {
     $signupForm.show();
   } 
   else { // user is logged in, show new story form
+     
+    //set title and submit button to 'submit'
+    $('#story-form-title').text('Submit');
+    $('#story-submit-btn').text('submit');
     $newStoryForm.show();
   }
   
@@ -61,7 +67,7 @@ $navSubmitStory.on("click", navSubmitStoryClick);
 /** On click of 'favorites' in the navbar, displays a list of favorited stories
  *  by the current, authenticated user. 
  */
-function navShowFavoritesClick(evt) {
+function showFavoritesClick(evt) {
   console.debug("navShowFavoritesClick", evt);
 
   hidePageComponents();
@@ -71,9 +77,9 @@ function navShowFavoritesClick(evt) {
   $favStoriesList.show();
 }
 
-$navShowFavorites.on('click', navShowFavoritesClick);
+$navShowFavorites.on('click', showFavoritesClick);
 
-function navShowSubmissionsClick(evt) {
+function showSubmissionsClick(evt) {
   console.debug("navShowSumbissionsClick", evt);
 
   hidePageComponents();
@@ -83,11 +89,14 @@ function navShowSubmissionsClick(evt) {
   $submittedStoriesList.show();
 }
 
-$navShowSubmissions.on('click', navShowSubmissionsClick);
+$navShowSubmissions.on('click', showSubmissionsClick);
 
 function navUserProfileClick(evt) {
   console.debug('navUserProfileClick', evt);
   hidePageComponents();
+
+  // remove message indicating if name change was successful
+  $userProfile.find('#name-change-msg').text('');
   $userProfile.show();
 }
 

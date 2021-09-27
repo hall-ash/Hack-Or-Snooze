@@ -41,41 +41,50 @@
 <body>
 
 <!-- top navigation bar -->
-<nav>
+<nav class="navbar navbar-expand-lg navbar-light">
   <div class="navbar-brand">
     <a class="nav-link" href="#" id="nav-all">Hack or Snooze</a>
   </div>
-  <div class ="main-nav-links hidden">
-    <a class="nav-link" href="#" id="nav-submit-story">submit</a>
-    <a class="nav-link" href="#" id="nav-show-favorites">favorites</a>
-    <a class="nav-link" href="#" id="nav-show-submissions">submissions</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class ="collapse navbar-collapse" id="navbarSupportedContent">
+    <div class="navbar-nav main-nav-links mr-auto">
+        <a class="nav-item nav-link hidden" href="#" id="nav-show-favorites">favorites</a>
+        <a class="nav-item nav-link hidden" href="#" id="nav-show-submissions">submissions</a>
+        <a class="nav-item nav-link hidden" href="#" id="nav-submit-story">submit</a>
+    </div>
+    <div class="navbar-nav ml-auto">
+      <a class="nav-item nav-link" href="#" id="nav-login">login / signup</a>
+      <a class="nav-item nav-link hidden" href="#" id="nav-user-profile"></a>
+      <a class="nav-item nav-link hidden" id="nav-logout" href="#"><small>(logout)</small></a>
+    </div>
   </div>
-  <div class="nav-right">
-    <a class="nav-link" href="#" id="nav-login">login / signup</a>
-    <a class="nav-link" href="#" id="nav-user-profile"></a>
-    <a class="hidden" id="nav-logout" href="#"><small>(logout)</small></a>
-  </div>
+
 </nav>
 
 <!-- area for stories (all stories, user stories, favorites) -->
 <section class="stories-container container">
 
   <!-- New story form -->
-  <form action="" class="hidden" id="new-story-form">
-    <h4>Submit</h4>
+  <form action="" 
+  class="hidden" 
+  id="new-story-form"
+  data-story-id ="">
+    <h4 id="story-form-title">Submit</h4>
     <div>
       <label for="story-author">author</label>
-      <input id="story-author" required placeholder="author name">
+      <input id="story-author" type="text" placeholder="author name" required>
     </div>
     <div>
       <label for="story-title">title</label>
-      <input id="story-title" required placeholder="story title">
+      <input id="story-title" type="text" placeholder="story title" required>
     </div>
     <div>
       <label for="story-url">url</label>
-      <input id="story-url" required type="url" placeholder="story url">
+      <input id="story-url" type="url" placeholder="story url" required>
     </div>
-    <button type="submit">submit</button>
+    <button id="story-submit-btn" type="button">submit</button>
     <hr>
   </form>
 
@@ -98,14 +107,14 @@
 
   <!-- Login form -->
   <form action="#" id="login-form" class="account-form hidden" method="post">
-    <h4>Login</h4>
+    <h4>Login<small class="form-text text-danger" id="invalid-login-cred"></small></h4>
     <div class="login-input">
       <label for="login-username">username</label>
-      <input id="login-username" autocomplete="current-username">
+      <input id="login-username" type="text" required>
     </div>
     <div class="login-input">
       <label for="login-password">password</label>
-      <input id="login-password" type="password" autocomplete="current-password">
+      <input id="login-password" type="password" required>
     </div>
     <button type="submit">login</button>
     <hr>
@@ -118,17 +127,18 @@
       class="account-form hidden"
       method="post">
     <h4>Create Account</h4>
-    <div class="login-input">
+    <div class="signup-input">
       <label for="signup-name">name</label>
-      <input id="signup-name" autocapitalize="words">
+      <input id="signup-name" type="text" autocapitalize="words" required>
     </div>
-    <div class="login-input">
+    <div class="signup-input">
       <label for="signup-username">username</label>
-      <input id="signup-username" autocomplete="new-username">
+      <input id="signup-username" type="text" autocomplete="new-username" required>
+      <small class="form-text text-danger" id="invalid-signup-username"></small>
     </div>
-    <div class="login-input">
+    <div class="signup-input">
       <label for="signup-password">password</label>
-      <input id="signup-password" autocomplete="new-password" type="password">
+      <input id="signup-password" autocomplete="new-password" type="password" required>
     </div>
     <button type="submit">create account</button>
   </form>
@@ -136,17 +146,40 @@
 
 <!-- User profile -->
 <section id="user-profile" class="hidden">
-  <div class="user-profile-box container">
-    <h4>User Profile:</h4>
+  <div class="user-profile-container container">
+    <h4>Profile for <span class="title-username"></span>:</h4>
     <section>
-      <div>name: <span id="profile-name"></span></div>
-      <div>user: <span id="profile-username"></span></div>
-      <div>created: <span id="profile-creation-date"></span></div>
+      <div class="input-group input-group-sm">
+        <label for="profile-name" class="pr-2 mt-2">name: </label>
+        <input id="profile-name" type="text" class="form-control" aria-label="profile name" aria-describedby="change-name-btn">
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary mb-2" type="submit" id="change-name-btn">Change</button>
+        </div>
+      </div>
+      <small class="form-text text-success mb-3" id="name-change-msg"></small>
+      <div>account created: <span id="profile-created-date"></span></div><br>
+      <a href="#" id="show-favorites">favorites</a><br>
+      <a href="#" id="show-submissions">submissions</a>
+      <hr>
+      <a href="#" class="text-danger" id="reset-password-link">reset password</a>
     </section>
   </div>
 </section>
 
-
+<!-- Reset password form -->
+<form
+  action="#"
+  id="reset-password-form"
+  class="hidden"
+  method="post">
+  <h4>Reset password for <span class="title-username"></span>:<small class="form-text text-danger" id="invalid-reset-password"></small></h4>
+  <div>
+    <label for="new-password" style="width: 110px;">New password: </label>
+    <input id="new-password" type="password" required>
+    <button id="reset-password-btn" class="btn btn-danger" type="submit">Reset</button>
+  </div>
+  
+</form>
 
 <!-- Library JS & our JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>

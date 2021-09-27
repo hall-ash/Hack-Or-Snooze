@@ -2,6 +2,7 @@
 
 const BASE_URL = "https://hack-or-snooze-v3.herokuapp.com";
 
+
 /******************************************************************************
  * Story: a single story in the system
  */
@@ -75,38 +76,25 @@ class StoryList {
    */
 
   async addStory(user, {title, author, url}) {
-    try {
-      // send POST request with given args to create story and
-      // await response containing JSON story object in response body
-      const response = await axios({
-        url: `${BASE_URL}/stories`,
-        method: "POST",
-        data: { 
-          token: user.loginToken,
-          story: { author, title, url } 
-        },
-      })
+   
+    // send POST request with given args to create story 
+    const response = await axios({
+      url: `${BASE_URL}/stories`,
+      method: "POST",
+      data: { 
+        token: user.loginToken,
+        story: { author, title, url } 
+      },
+    })
 
-      console.log('POST STORY', response);
+    // from JSON data, create Story obj
+    const newStory = new Story(response.data.story);
 
-      if (response.status === 201) {
-        // from JSON data, create Story obj
-        const newStory = new Story(response.data.story);
+    // update storyList.stories & user's stories
+    this.stories.set(newStory.storyId, newStory);
+    user.ownStories.set(newStory.storyId, newStory);
 
-        // update storyList.stories & user's stories
-        this.stories.set(newStory.storyId, newStory);
-        user.ownStories.set(newStory.storyId, newStory);
-
-        return newStory;
-      }
-      else {
-        throw new Error('response status:', response.status);
-      }
-      
-
-    } catch(err) {
-      console.error('addStory failed', err);
-    }
+    return newStory;
     
   }
 
@@ -120,32 +108,50 @@ class StoryList {
    */
   async removeStory(user, storyId) {
 
-    try {
-      // send DELETE request to remove given story and
-      // await response containing JSON story object in response body
-      const response = await axios({
-        url: `${BASE_URL}/stories/${storyId}`,
-        method: "DELETE",
-        data: {
-          token: user.loginToken,
-        }
-      })
-      console.log('DELETE', response);
-      if (response.status === 200) {
+    // send DELETE request to remove given story 
+    await axios({
+      url: `${BASE_URL}/stories/${storyId}`,
+      method: "DELETE",
+      data: {
+        token: user.loginToken,
+      }
+    })
+  
+    // remove story from all story lists
+    this.stories.delete(storyId);
+    user.ownStories.delete(storyId);
+    user.favorites.delete(storyId);
+     
+  }
 
-        // remove story from all story lists
-        this.stories.delete(storyId);
-        user.ownStories.delete(storyId);
-        user.favorites.delete(storyId);
+  /**
+   * Update a story with new data.
+   */
+  async updateStory(user, storyId, updatedData) {
+
+    // send PATCH request to update the story with the given data
+    const response = await axios({
+      url: `${BASE_URL}/stories/${storyId}`,
+      method: "PATCH",
+      data: {
+        token: user.loginToken,
+        story: updatedData,
       }
-      else {
-        throw new Error('response status:', response.status);
-      }
-    }
-    catch(err) {
-      console.error('removeStory failed', err);
-    }
+    })
+
+    // from JSON data, create Story instance
+    const updatedStory = new Story(response.data.story);
     
+    // update storyList.stories & user's stories 
+    this.stories.set(storyId, updatedStory);
+    user.ownStories.set(storyId, updatedStory);
+
+    // if story is favorited, update user favorites 
+    if (user.favorites.has(storyId)) {
+      user.favorites.set(storyId, updatedStory);
+    }
+
+    return updatedStory;
 
   }
 
@@ -196,14 +202,16 @@ class User {
    */
 
   static async signup(username, password, name) {
+
+    // create an account with the given data
     const response = await axios({
       url: `${BASE_URL}/signup`,
       method: "POST",
       data: { user: { username, password, name } },
     });
 
-    
-    let { user } = response.data
+    // get the user json object and return a User instance
+    const { user } = response.data
 
     return new User(
       {
@@ -225,13 +233,16 @@ class User {
    */
 
   static async login(username, password) {
+
+    // login the user
     const response = await axios({
       url: `${BASE_URL}/login`,
       method: "POST",
       data: { user: { username, password } },
     });
-
-    let { user } = response.data;
+    
+    // get the user json object and return the user instance
+    const { user } = response.data;
 
     return new User(
       {
@@ -243,6 +254,7 @@ class User {
       },
       response.data.token
     );
+    
   }
 
   /** When we already have credentials (token & username) for a user,
@@ -251,13 +263,15 @@ class User {
 
   static async loginViaStoredCredentials(token, username) {
     try {
+      // login the user
       const response = await axios({
         url: `${BASE_URL}/users/${username}`,
         method: "GET",
         params: { token },
       });
 
-      let { user } = response.data;
+      // get the user json object and return the user instance
+      const { user } = response.data;
 
       return new User(
         {
@@ -282,70 +296,78 @@ class User {
    * - requestMethod - the type of http request, either POST or DELETE
    * - storyId - the id of the story to remove or add to favorites
    */
-  async _sendReqToFavoritesEndpoint(requestMethod, storyId) {
-    try {
-
-      if (requestMethod === 'POST' || requestMethod === 'DELETE') {
-        const { username, loginToken: token } = this;
-    
-        const response = await axios({
-          url: `${BASE_URL}/users/${username}/favorites/${storyId}`,
-          method: requestMethod,
-          data: { token },
-        });
-    
-        if (response.status === 200) {
-          console.log(requestMethod, 'story to/from favorites');
-          return true;
-        } 
-      }
-
-      return false;
-
-    } 
-    catch(err) {
-      console.error('_sendRequestToFavorites failed', err)
+  async _postOrDeleteFavorite(requestMethod, storyId) {
+   
+    if (requestMethod === 'POST' || requestMethod === 'DELETE') {
+      const { username, loginToken: token } = this;
+  
+      // post or delete the given story to user favorites 
+      await axios({
+        url: `${BASE_URL}/users/${username}/favorites/${storyId}`,
+        method: requestMethod,
+        data: { token },
+      });
+  
+    }
+    else {
+      throw new Error('Invalid request method.');
     }
     
   }
 
-  /** Add a story to list of user favorites.
+  /** Add a story to user favorites.
    * 
    */
   async addToFavorites(story) {
-    try{
-      // send POST req to the API to add story to favorites
-      const responseSuccessful = await this._sendReqToFavoritesEndpoint('POST', story.storyId);
-      
-      if (responseSuccessful) {
-         // add story to user's favorites 
-         this.favorites.set(story.storyId, story);
-        console.log('added to favs successfully')
-      } 
-     
-
-    } catch (err) {
-      console.error("addAFavoriteStory failed", err);
-    }
+   
+    // post story to favorites
+    await this._postOrDeleteFavorite('POST', story.storyId);
+    
+    // add to User instance's favorites Map
+    this.favorites.set(story.storyId, story);
 
   }
 
+  /** Remove a story from user favorites.
+   * 
+   */
   async removeFromFavorites(story) {
-    try {
-
-      // update the API
-      const responseSuccessful = await this._sendReqToFavoritesEndpoint('DELETE', story.storyId);
+   
+    // delete story from favorites
+    await this._postOrDeleteFavorite('DELETE', story.storyId);
+    
+    // remove from User instance's favorites Map
+    this.favorites.delete(story.storyId);
       
-      if (responseSuccessful) {
-        // remove story from user's favorites 
-        this.favorites.delete(story.storyId);
-        console.log('removed from favs successfully')
-      }
-     
-    } catch (err) {
-      console.error("removeFromFavorites failed", err);
-    }
   } 
   
+  /**
+   * Change the user's name.
+   */
+  async changeName(newName) {
+    await this._updateUserInfo({ name: newName });
+  }
+
+  /**
+   * Change the user's password.
+   */
+  async changePassword(newPassword) {
+    await this._updateUserInfo({ password: newPassword });
+  }
+
+  /**
+   * Send a patch request to update the user's info.
+   */
+  async _updateUserInfo(newUserInfo) {
+  
+    await axios({
+      url: `${BASE_URL}/users/${this.username}`,
+      method: "PATCH",
+      data: { 
+        token: this.loginToken,
+        user: newUserInfo,
+      },
+    });
+  }
 
 }

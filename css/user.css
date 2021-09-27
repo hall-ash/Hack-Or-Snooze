@@ -1,4 +1,4 @@
-/* Login and signup forms */
+/* Login, signup, reset password forms */
 
 .account-form button {
   width: 4rem;
@@ -11,4 +11,27 @@
 
 .account-forms-container {
   padding-left: 20px;
+}
+
+.user-profile-container {
+  padding: 10px 20px 20px;
+  font-size: 0.9rem;
+}
+
+.user-profile-container > * {
+  margin: 10px 0;
+}
+
+.user-profile-container h4 {
+  font-weight: bold;
+}
+
+.user-profile-container div.input-group {
+  width: 300px;
+}
+
+#reset-password-form {
+  padding: 10px 20px 20px;
+  font-size: 0.9rem;
+  background-color: #f6f6ef;
 }
