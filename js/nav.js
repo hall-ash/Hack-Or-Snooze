@@ -11,95 +11,98 @@ function navAllStories(evt) {
   hidePageComponents();
   putStoriesOnPage();
 }
-
 $body.on("click", "#nav-all", navAllStories);
 
-/** Show login/signup on click on "login" */
 
-function navLoginClick(evt) {
-  console.debug("navLoginClick", evt);
+/** Show login/signup on click on "login / signup" */
+
+function navLoginOrSignupClick(evt) {
+  console.debug("navLoginOrSignupClick", evt);
   hidePageComponents();
   $loginForm.show();
   $signupForm.show();
 }
+$navLoginOrSignup.on("click", navLoginOrSignupClick);
 
-$navLogin.on("click", navLoginClick);
 
-/** When a user first logins in, update the navbar to reflect that. */
+/** 
+ * When a user first logins in, update the navbar to reflect that. 
+ * Displays the following nav items: favorites, submissions, submit, user profile, logout
+ * Hides the login/logout nav item.
+*/
 
 function updateNavOnLogin() {
   console.debug("updateNavOnLogin");
   $navShowFavorites.show();
   $navShowSubmissions.show();
   $navSubmitStory.show();
-  $navLogin.hide();
+  $navLoginOrSignup.hide();
   $navLogOut.show();
   $navUserProfile.text(`${currentUser.username}`).show();
 }
 
-/** When the current, authenticated user clicks 'submit' in the navbar display the new 
- *  story form.
+/** 
+ * When the current user clicks 'submit' in the navbar display the form
+ * to create a story. 
  */
 function navSubmitStoryClick(evt) {
   console.debug("navSubmitStoryClick", evt);
 
   hidePageComponents();
-
-  // if no user is logged in direct to signup/login form
-  if (!currentUser) {
-    $('<p id="must-login-msg">You have to be logged in to submit.</p>').prependTo('.account-forms-container');
-    $loginForm.show();
-    $signupForm.show();
-  } 
-  else { // user is logged in, show new story form
      
-    //set title and submit button to 'submit'
-    $('#story-form-title').text('Submit');
-    $('#story-submit-btn').text('submit');
-    $newStoryForm.show();
-  }
-  
-}
+  // set title and submit button text to 'submit' to indicate form is for
+  // creating a story (not updating)
+  $('#story-form-title').text('Submit');
+  $('#story-submit-btn').text('submit');
 
+  $createOrUpdateStoryForm.show();
+}
 $navSubmitStory.on("click", navSubmitStoryClick);
 
 
-/** On click of 'favorites' in the navbar, displays a list of favorited stories
- *  by the current, authenticated user. 
+/**
+ *  On click of 'favorites' in the navbar, display a list of favorited stories
+ *  by the current user. 
  */
 function showFavoritesClick(evt) {
   console.debug("navShowFavoritesClick", evt);
 
   hidePageComponents();
 
+  // create a list of story markups favorited by the user and display
   putFavoriteStoriesOnPage();
-
-  $favStoriesList.show();
 }
-
 $navShowFavorites.on('click', showFavoritesClick);
 
+
+/**
+ * On click of 'submissions' in the navbar, display a list of user
+ * submitted stories.
+ */
 function showSubmissionsClick(evt) {
   console.debug("navShowSumbissionsClick", evt);
 
   hidePageComponents();
 
+  // create a list of story markups submitted by the user and display
   putSubmittedStoriesOnPage();
-
-  $submittedStoriesList.show();
 }
-
 $navShowSubmissions.on('click', showSubmissionsClick);
 
+
+/**
+ * On click of user profile nav item, display the user's profile. 
+ */
 function navUserProfileClick(evt) {
   console.debug('navUserProfileClick', evt);
+
   hidePageComponents();
 
-  // remove message indicating if name change was successful
+  // clear message indicating if user name change was successful
   $userProfile.find('#name-change-msg').text('');
+
   $userProfile.show();
 }
-
 $navUserProfile.on('click', navUserProfileClick);
 
 

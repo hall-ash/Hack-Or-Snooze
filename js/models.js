@@ -9,7 +9,8 @@ const BASE_URL = "https://hack-or-snooze-v3.herokuapp.com";
 
 class Story {
 
-  /** Make instance of Story from data object about story:
+  /** 
+   * Make instance of Story from data object about story:
    *   - {title, author, url, username, storyId, createdAt}
    */
 
@@ -31,20 +32,21 @@ class Story {
 
 
 /******************************************************************************
- * List of Story instances: used by UI to show story lists in DOM.
+ * Map of Story instances: used by UI to show stories in DOM.
  */
 
-class StoryList {
+class StoriesMap {
   constructor(stories) {
     this.stories = stories;
   }
 
-  /** Generate a new StoryList. It:
+  /** 
+   * Generate a new StoryList. It:
    *
    *  - calls the API
-   *  - builds an array of Story instances
-   *  - makes a single StoryList instance out of that
-   *  - returns the StoryList instance.
+   *  - builds a map of Story instances
+   *  - makes a single StoriesMap instance out of that
+   *  - returns the StoriesMap instance.
    */
 
   static async getStories() {
@@ -65,10 +67,11 @@ class StoryList {
     }, new Map())
     
     // build an instance of our own class using the new map of stories
-    return new StoryList(stories);
+    return new StoriesMap(stories);
   }
 
-  /** Adds story data to API, makes a Story instance, adds it to story list.
+  /**
+   * Adds story data to API, makes a Story instance, adds it to stories map.
    * - user - the current instance of User who will post the story
    * - newStory object - {title, author, url}
    *
@@ -77,7 +80,7 @@ class StoryList {
 
   async addStory(user, {title, author, url}) {
    
-    // send POST request with given args to create story 
+    // send POST request with title, author, url info to create story 
     const response = await axios({
       url: `${BASE_URL}/stories`,
       method: "POST",
@@ -87,10 +90,10 @@ class StoryList {
       },
     })
 
-    // from JSON data, create Story obj
+    // create Story obj from response data
     const newStory = new Story(response.data.story);
 
-    // update storyList.stories & user's stories
+    // update storiesMap.stories & user's stories
     this.stories.set(newStory.storyId, newStory);
     user.ownStories.set(newStory.storyId, newStory);
 
@@ -99,7 +102,7 @@ class StoryList {
   }
 
   /**
-   * Removes the Story object with the given storyId from storyList.stories,
+   * Removes the Story object with the given storyId from storiesMap.stories,
    * user.ownStories, and user.favorites if favorited. Also removes the story's
    * data from the API.
    * 
@@ -125,7 +128,13 @@ class StoryList {
   }
 
   /**
-   * Update a story with new data.
+   * Update a story with new data. Updates the API and any stories maps
+   * containing the story and returns the updated Story instance. 
+   * Only stories posted by the user can be updated. 
+   * 
+   * - user - the current instance of User
+   * - storyId - the id of the story to be updated
+   * - updatedData - new data to update the story with
    */
   async updateStory(user, storyId, updatedData) {
 
@@ -139,7 +148,7 @@ class StoryList {
       }
     })
 
-    // from JSON data, create Story instance
+    // create Story instance from response data
     const updatedStory = new Story(response.data.story);
     
     // update storyList.stories & user's stories 
@@ -163,7 +172,8 @@ class StoryList {
  */
 
 class User {
-  /** Make user instance from obj of user data and a token:
+  /** 
+   * Make user instance from obj of user data and a token:
    *   - {username, name, createdAt, favorites[], ownStories[]}
    *   - token
    */
@@ -181,6 +191,7 @@ class User {
     this.createdAt = createdAt;
 
     // instantiate Story instances for the user's favorites and ownStories
+    // to create map of favorite stories and own stories
     this.favorites = favorites.reduce((storyMap, story) => {
       return storyMap.set(story.storyId, new Story(story));
     }, new Map());
@@ -194,7 +205,8 @@ class User {
   }
 
 
-  /** Register new user in API, make User instance & return it.
+  /** 
+   * Register new user in API, make User instance & return it.
    *
    * - username: a new username
    * - password: a new password
@@ -203,16 +215,15 @@ class User {
 
   static async signup(username, password, name) {
 
-    // create an account with the given data
+    // send POST request to create an account with the given user info
     const response = await axios({
       url: `${BASE_URL}/signup`,
       method: "POST",
       data: { user: { username, password, name } },
     });
 
-    // get the user json object and return a User instance
+    // return a User instance with the response data
     const { user } = response.data
-
     return new User(
       {
         username: user.username,
@@ -226,7 +237,8 @@ class User {
     
   }
 
-  /** Login in user with API, make User instance & return it.
+  /** 
+   * Login in user with API, make User instance & return it.
 
    * - username: an existing user's username
    * - password: an existing user's password
@@ -234,16 +246,15 @@ class User {
 
   static async login(username, password) {
 
-    // login the user
+    // send POST request to login the user
     const response = await axios({
       url: `${BASE_URL}/login`,
       method: "POST",
       data: { user: { username, password } },
     });
     
-    // get the user json object and return the user instance
+    // instantiate a user instance from the response data and return it
     const { user } = response.data;
-
     return new User(
       {
         username: user.username,
@@ -257,8 +268,14 @@ class User {
     
   }
 
-  /** When we already have credentials (token & username) for a user,
-   *   we can log them in automatically. This function does that.
+  /**
+   *  When we already have credentials (token & username) for a user,
+   *  we can log them in automatically. This function does that.
+   *  Returns the logged in User instance if the server response is
+   *  successful, otherwise returns null. 
+   * 
+   * token - the login token for the current user
+   * username - the current user's username
    */
 
   static async loginViaStoredCredentials(token, username) {
@@ -270,9 +287,8 @@ class User {
         params: { token },
       });
 
-      // get the user json object and return the user instance
+      // instantiate a User instance from the response data and return it
       const { user } = response.data;
-
       return new User(
         {
           username: user.username,
@@ -290,8 +306,8 @@ class User {
   }
 
   /**
-   * Sends an http request to the API's 'favorites' endpoint. Returns true
-   * if a successful response was returned.
+   * Send an POST or DELETE request to the API's 'favorites' endpoint
+   * to update the API with the favorited or unfavorited story.
    * 
    * - requestMethod - the type of http request, either POST or DELETE
    * - storyId - the id of the story to remove or add to favorites
@@ -315,51 +331,66 @@ class User {
     
   }
 
-  /** Add a story to user favorites.
+  /** 
+   * Add a story to user favorites and update the API. 
    * 
+   * story - the Story instance to add to favorites
    */
   async addToFavorites(story) {
    
-    // post story to favorites
+    // send post request to add story to favorites
     await this._postOrDeleteFavorite('POST', story.storyId);
     
     // add to User instance's favorites Map
     this.favorites.set(story.storyId, story);
-
   }
 
-  /** Remove a story from user favorites.
+  /** 
+   * Remove a story from user favorites.
    * 
+   * story - the Story instance to remove from favorites
    */
   async removeFromFavorites(story) {
    
-    // delete story from favorites
+    // send delete request to delete story from favorites
     await this._postOrDeleteFavorite('DELETE', story.storyId);
     
     // remove from User instance's favorites Map
     this.favorites.delete(story.storyId);
-      
   } 
   
   /**
    * Change the user's name.
+   * 
+   * newName - the user's new name
    */
   async changeName(newName) {
+
+    // send a patch request to change the user's name
     await this._updateUserInfo({ name: newName });
+
+    // update the User instance's name
+    this.name = newName;
   }
 
   /**
    * Change the user's password.
+   * 
+   * newPassword - the user's new password
    */
   async changePassword(newPassword) {
+    // send patch request to change the user's password
     await this._updateUserInfo({ password: newPassword });
   }
 
   /**
    * Send a patch request to update the user's info.
+   * 
+   * newUserInfo - object containing new user info
    */
   async _updateUserInfo(newUserInfo) {
   
+    // send patch request to update the user's information
     await axios({
       url: `${BASE_URL}/users/${this.username}`,
       method: "PATCH",

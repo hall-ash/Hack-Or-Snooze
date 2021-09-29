@@ -1,17 +1,20 @@
 "use strict";
 
-// This is the global list of the stories, an instance of StoryList
-let storyList;
+// This is the global map of the stories, an instance of StoriesMap
+let storiesMap;
 
 /** Get and show stories when site first loads. */
-
 async function getAndShowStoriesOnStart() {
+
   try {
+    // build the map of stories
+    storiesMap = await StoriesMap.getStories();
 
-    storyList = await StoryList.getStories();
+    // remove the loading message
     $storiesLoadingMsg.remove();
-    putStoriesOnPage();
 
+    // display list of story markups on page
+    putStoriesOnPage();
   }
   catch(err) {
     alert('Error loading stories.');
@@ -20,7 +23,9 @@ async function getAndShowStoriesOnStart() {
 }
 
 /**
- * Create an HTML dropdown item to delete a story.
+ * Create an HTML dropdown item to delete a story. 
+ * 
+ * Returns the dropdown item markup. 
  */
 function getDeleteStoryDropdownItem() {
   return $(`
@@ -33,7 +38,7 @@ function getDeleteStoryDropdownItem() {
       const storyId = $storyToDelete.attr('id');
 
       // remove from api and story lists
-      await storyList.removeStory(currentUser, storyId);
+      await storiesMap.removeStory(currentUser, storyId);
 
       // remove from dom
       $storyToDelete.remove();
@@ -46,36 +51,47 @@ function getDeleteStoryDropdownItem() {
   });
 }
 
-
+/**
+ * Create an HTML dropdown item that displays the form to edit a story
+ * on clicking. 
+ * 
+ * Returns the dropdown item markup.
+ */
 function getEditStoryDropdownItem() {
   return $(`
   <a class="dropdown-item" id="edit-story-dropdown" href="#">edit</a>
   `).on('click', function() {
+
+    // get the story object from the story id
     const storyId = $(this).parents('li').attr('id');
-    const story = storyList.stories.get(storyId);
+    const story = storiesMap.stories.get(storyId);
 
-    // add storyId to form's dataset
-    $newStoryForm.data('story-id', storyId);
+    // add storyId to form's dataset, so the update form
+    // will know which story to update
+    $createOrUpdateStoryForm.data('story-id', storyId);
 
-    // update inputs in story submit form
+    // update inputs in story submit form with info from current story
     $('#story-author').val(story.author);
     $('#story-title').val(story.title);
     $('#story-url').val(story.url);
 
-    // change title and button text on new story form to 'update'
+    // change title and button text on story form to 'update'
     $('#story-form-title').text('Update');
     $('#story-submit-btn').text('update');
 
     hidePageComponents();
-    $newStoryForm.show();
 
+    // display the form
+    $createOrUpdateStoryForm.show();
   });
 }
 
 
 /**
- * Create html star for favoriting stories that is filled when favorited and
- * empty when unfavorited.
+ * Create an HTML star for favoriting stories that is filled with color when a
+ * story is favorited and emptied when unfavorited.
+ * 
+ * Returns the favorite star markup. 
  */
 function getFavoriteStar() {
   return $(`
@@ -83,7 +99,8 @@ function getFavoriteStar() {
   `)
   .on('click', function() {
 
-    // do nothing if user isn't logged in
+    // if user isn't logged in, display tooltip 
+    // indicating that user needs to login/signup to favorite
     if (!currentUser) {
       $(this).tooltip('show');
       return;
@@ -93,9 +110,9 @@ function getFavoriteStar() {
     
     // get story from storyId
     const storyId = $(this).parents('li').attr('id');
-    const story = storyList.stories.get(storyId);
+    const story = storiesMap.stories.get(storyId);
 
-    // toggle star's fill property
+    // if star is filled, display an empty star; if empty, display filled
     $(this).toggleClass('bi-star bi-star-fill');
 
     // remove story from favorites if already there
@@ -109,6 +126,9 @@ function getFavoriteStar() {
   });
 }
 
+/**
+ * Create a dropdown that allows a user to edit or delete a submitted story. 
+ */
 function getUpdateOrDeleteStoryDropdown() {
   const $dropdown = $(`
     <div class="dropdown">
@@ -121,13 +141,13 @@ function getUpdateOrDeleteStoryDropdown() {
     </div>
   `);
 
+  // add edit and delete dropdown items to dropdown menu
   const $dropdownMenu = $dropdown.find('.dropdown-menu');
   $dropdownMenu.append(getEditStoryDropdownItem());
   $dropdownMenu.append('<hr>');
   $dropdownMenu.append(getDeleteStoryDropdownItem());
 
   return $dropdown;
-
 }
 
 
@@ -141,8 +161,11 @@ function getUpdateOrDeleteStoryDropdown() {
 function generateStoryMarkup(story) {
   // console.debug("generateStoryMarkup", story);
 
+  // determine if story is user's own
   let ownStory = currentUser && currentUser.username === story.username;
 
+  // create story markup
+  // if ownStory is true, markup will display 'posted by me' instead of posted by user's username
   const $storyMarkup = $(`
       <li id="${story.storyId}">
         <div id="story-main">
@@ -161,7 +184,7 @@ function generateStoryMarkup(story) {
     // get story subtext
     const $subtext = $storyMarkup.find('.story-subtext')
 
-    // add delete and update button for user's own stories
+    // add delete and update dropdown for user's own stories and append to story subtext
     if (ownStory) {
       $subtext.append(getUpdateOrDeleteStoryDropdown);
     }
@@ -172,10 +195,17 @@ function generateStoryMarkup(story) {
     return $storyMarkup;
 }
 
+/**
+ * Change the markup for a story to reflect its updated data.
+ * 
+ * - updatedStory: the Story instance that has been updated
+ */
 const updateStoryMarkup = (updatedStory) => {
 
+  // find the markup to update with the story's id
   const $markupToUpdate = $allStoriesList.find(`#${updatedStory.storyId}`);
 
+  // update the markup with the story's new data
   $markupToUpdate.find('#story-markup-title').text(updatedStory.title);
   $markupToUpdate.find('#story-markup-hostname').text(`${updatedStory.getHostName()}`);
   $markupToUpdate.find('#story-markup-author').text(updatedStory.author);
@@ -183,13 +213,16 @@ const updateStoryMarkup = (updatedStory) => {
 
 /**
  * Fills in the 'favorite' star for all story markups in the user's favorites list.
- * Precondition: Story markup must exist for favorited stories before calling.
  */
 function showFavoriteStarsForCurrentUser() {
+
+  // loop through user's favorite stories and display the filled in star in their markups
   for (const storyId of currentUser.favorites.keys()) {
+    
     // get story markup
-    console.log(storyId);
     const $storyMarkup = $(`#${storyId}`);
+
+    // adds bi-star-fill class, removes bi-star class
     $storyMarkup.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
   }
    
@@ -203,16 +236,14 @@ function putStoriesOnPage() {
 
   $allStoriesList.empty();
 
-  // loop through all of our stories and generate HTML for them
-  for (const story of storyList.stories.values()) {
+  // loop through all of our stories and generate markups for them
+  for (const story of storiesMap.stories.values()) {
     const $story = generateStoryMarkup(story);
     $allStoriesList.append($story);
   }
 
-  console.log('stories', storyList.stories.values());
-
   // if user is logged in, show filled-in stars next to their favorite stories
-  if (currentUser && $allStoriesList[0].childElementCount) showFavoriteStarsForCurrentUser()
+  if (currentUser) showFavoriteStarsForCurrentUser()
 
   $allStoriesList.show();
 }
@@ -241,7 +272,7 @@ async function updateOrSubmitNewStory(evt) {
   try {
 
     if ($storySubmitBtn.text() === 'submit') {
-      const newStory = await storyList.addStory(currentUser, storyData);
+      const newStory = await storiesMap.addStory(currentUser, storyData);
 
       const $story = generateStoryMarkup(newStory); // generate story html
       $allStoriesList.prepend($story); // add story to top of all-stories-list
@@ -249,20 +280,20 @@ async function updateOrSubmitNewStory(evt) {
     }
     else if ($storySubmitBtn.text() === 'update') {
 
-      const storyId = $newStoryForm.data('story-id');
+      const storyId = $createOrUpdateStoryForm.data('story-id');
 
-      const updatedStory = await storyList.updateStory(currentUser, storyId, storyData);
+      const updatedStory = await storiesMap.updateStory(currentUser, storyId, storyData);
 
       // update the markup
       updateStoryMarkup(updatedStory);
 
       // reset story id data
-      $newStoryForm.data('story-id', '');
+      $createOrUpdateStoryForm.data('story-id', '');
       
     }
     
-    $newStoryForm.hide();
-    $newStoryForm.trigger('reset');
+    $createOrUpdateStoryForm.hide();
+    $createOrUpdateStoryForm.trigger('reset');
 
     // show the home page with the new story
     $allStoriesList.show();
@@ -274,43 +305,47 @@ async function updateOrSubmitNewStory(evt) {
   }
 }
 
-$newStoryForm.on('click', 'button', updateOrSubmitNewStory);
+$createOrUpdateStoryForm.on('click', 'button', updateOrSubmitNewStory);
 
 
 /**
- * Display the current, authenticated user's list of favorite stories.
+ * Display the current user's favorite stories.
  */
 function putFavoriteStoriesOnPage(evt) {
   console.debug("putFavoriteStoriesOnPage", evt);
 
   $favStoriesList.empty();
 
-  console.log(currentUser.favorites);
-  // loop through all user's favorited stories and generate HTML for them
+  // loop through user's favorited stories and generate HTML for them
   if (currentUser.favorites.size) {
     for (const fav of currentUser.favorites.values()) {
-      console.log(fav);
       const $favMarkup = generateStoryMarkup(fav);
+      
+      // add bi-star-fill, remove bi-star
       $favMarkup.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
+      
       $favStoriesList.append($favMarkup);
     }
   }
   else {
     $favStoriesList.append('<h4>No favorites added.</h4>')
   }
- 
 
   $favStoriesList.show();
-}
 
+}
 $navShowFavorites.on('click', putFavoriteStoriesOnPage);
 
 
+/**
+ * Display the current user's submitted stories.
+ */
 function putSubmittedStoriesOnPage(evt) {
   console.debug("putSubmittedStoriesOnPage", evt);
 
   $submittedStoriesList.empty();
 
+  // loop through user's own stories and generate markup
   if (currentUser.ownStories.size) {
     for (const story of currentUser.ownStories.values()) {
       const $story = generateStoryMarkup(story);
@@ -322,6 +357,6 @@ function putSubmittedStoriesOnPage(evt) {
   }
 
   $submittedStoriesList.show();
-}
 
+}
 $navShowSubmissions.on('click', putSubmittedStoriesOnPage);

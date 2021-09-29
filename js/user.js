@@ -8,34 +8,7 @@ let currentUser;
  */
 
 
-const handleInvalidFormInput = (invalidInput, errorMsg) => {
-
-  switch (invalidInput) {
-
-    case 'loginCredentials':
-      // add msg to top of login form
-      $('#invalid-login-cred').text(errorMsg);
-      break;
-
-    case 'signupUsername':
-      // add msg under username input
-      $('#invalid-signup-username').text(errorMsg);
-      $('#signup-username').focus(); //put the username input into focus
-      break;
-
-    case 'invalidResetPassword':
-      $('#invalid-reset-password').text(errorMsg);
-      $('#current-password').focus();
-      break;
-
-    default:
-      alert(errorMsg);
-  }
-    
-}
-
 /** Handle login form submission. If login ok, sets up the user instance */
-
 async function login(evt) {
   console.debug("login", evt);
 
@@ -45,7 +18,7 @@ async function login(evt) {
   // grab the username and password
   const username = $("#login-username").val();
   const password = $("#login-password").val();
-  $('#invalid-login-cred').text(); // remove invalid input msg from login page
+  $('#invalid-login-cred').text(); // remove invalid input msg from login form
   
   try {
     
@@ -60,22 +33,25 @@ async function login(evt) {
     $loginForm.trigger("reset"); 
   }
   catch(err) {
+     // user input incorrect login or password
     if (err.message.includes('401')) {
-      handleInvalidFormInput('loginCredentials', 
-      'Incorrect username or password. Please try again!');
+
+      $('#invalid-login-cred').text('Incorrect username or password. Please try again!');
+    
     }
     else {
+
       alert('Error logging in. Try again.');
       console.err('login failed', err);
+    
     }
   }
-}
 
+}
 $loginForm.on("submit", login);
 
 
 /** Handle signup form submission. */
-8
 async function signup(evt) {
   console.debug("signup", evt);
 
@@ -100,18 +76,26 @@ async function signup(evt) {
     $signupForm.trigger("reset");
   }
   catch(err) {
+    // username has been taken
     if (err.message.includes('409')) {
-      handleInvalidFormInput('signupUsername', `username ${username} is taken!`);
+
+      // add error msg under username input
+      $('#invalid-signup-username').text(`username ${username} is taken!`);
+      //put the username input into focus
+      $('#signup-username').focus(); 
+
     }
     else {
+
       alert('Error signing up. Try again.');
       console.error('signup failed', err);
+    
     }
   }
   
 }
-
 $signupForm.on("submit", signup);
+
 
 /** Handle click of logout button
  *
@@ -126,27 +110,38 @@ function logout(evt) {
   // refresh page
   location.reload();
 }
-
 $navLogOut.on("click", logout);
 
+
+/**
+ * Display the reset password form. 
+ */
 function showResetPasswordForm() {
   hidePageComponents();
+
+  // clear password input
   $resetPasswordForm.trigger("reset");
+
   $resetPasswordForm.show();
 }
 $resetPasswordLink.on('click', showResetPasswordForm);
 
 
+/**
+ * Reset the current user's password with inputted value from the reset password form.
+ */
 async function resetPassword(evt) {
   console.debug("resetPassword", evt);
 
   // prevent page refresh on submit
   evt.preventDefault();
 
+  // get the new password
   const newPassword = $("#new-password").val();
   
   try{
 
+    // send server request to change password
     await currentUser.changePassword(newPassword);
   
     // reset input values
@@ -155,35 +150,51 @@ async function resetPassword(evt) {
     alert('Password successfully changed!');
 
     $resetPasswordForm.hide();
+
+    // take user back to home page
     $allStoriesList.show();
+  
   }
   catch(err) {
+
     alert('Could not reset password. Try again.');
     console.error('resetPassword failed', err);
+  
   }
-}
 
+}
 $resetPasswordForm.on('submit', resetPassword);
 
+
+/**
+ * Change the user's name to the inputted value. 
+ */
 async function changeName(evt) {
   console.debug('changeName', evt);
 
   evt.preventDefault();
 
+  // get the new name
   const newName = $("#profile-name").val();
 
   try {
+
+    // send server request to change name and change User instance's name prop
     await currentUser.changeName(newName);
 
+    // display success message
     $('#name-change-msg').text(`Name successfully changed to ${newName}!`);
-    currentUser.name = newName;
+    
   }
   catch(err) {
-    console.error('changeName failed', err);
-  }
-}
 
+    console.error('changeName failed', err);
+  
+  }
+
+}
 $userProfile.on('click', '#change-name-btn', changeName);
+
 
 /******************************************************************************
  * Storing/recalling previously-logged-in-user with localStorage
@@ -195,8 +206,12 @@ $userProfile.on('click', '#change-name-btn', changeName);
 
 async function checkForRememberedUser() {
   console.debug("checkForRememberedUser");
+
+  // get token and username from local storage
   const token = localStorage.getItem("token");
   const username = localStorage.getItem("username");
+
+  // if token or username are null, don't attempt to log in
   if (!token || !username) return false;
 
   // try to log in with these credentials (will be null if login failed)
@@ -211,10 +226,13 @@ async function checkForRememberedUser() {
 
 function saveUserCredentialsInLocalStorage() {
   console.debug("saveUserCredentialsInLocalStorage");
+
+  // add user's token and username to local storage
   if (currentUser) {
     localStorage.setItem("token", currentUser.loginToken);
     localStorage.setItem("username", currentUser.username);
   }
+
 }
 
 /******************************************************************************
@@ -234,25 +252,30 @@ async function updateUIOnUserLogin() {
   hidePageComponents();
 
   putStoriesOnPage();
-  $allStoriesList.show();
 
   updateNavOnLogin();
+  
   createUserProfile();
   
 }
 
+/**
+ * Create a user profile for the current user.
+ * Display the user's username in the title, the name,
+ * and the date of account creation.
+ */
 function createUserProfile() {
   console.debug('createUserProfile');
 
-  // $('#profile-name').text(currentUser.name);
-  $('#profile-name').val(currentUser.name);
-
-  // sets title for reset password form and user profile
+  // sets user profile title to display 'Profile for <username>'
   $('.title-username').text(currentUser.username);
+
+  $('#profile-name').val(currentUser.name);
 
   $('#profile-created-date').text(currentUser.createdAt.slice(0, 10));
 }
 
+// allow user to view their favorites and submissions from user profile
 $userProfile.on('click', '#show-favorites', showFavoritesClick);
 $userProfile.on('click', '#show-submissions', showSubmissionsClick);
 

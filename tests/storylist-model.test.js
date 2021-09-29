@@ -1,9 +1,11 @@
+// update comments, add more tests
+
 // StoryList class unit tests
 
 describe('StoryList unit tests', () => {
   // data to create story
   const storyData = {
-    title: 'TEST STORY',
+    title: 'TEST STORY - StoriesMap model',
     author: 'TEST AUTHOR',
     url: 'https://www.google.com/',
   }
@@ -13,8 +15,8 @@ describe('StoryList unit tests', () => {
   
   beforeAll( async() => {
     // login test user 
-    const username = 'test'
-    const password = 'foo'
+    const username = ''
+    const password = ''
     currentUser = await User.login(username, password);
   })
 
@@ -22,21 +24,21 @@ describe('StoryList unit tests', () => {
     it('should increment the number of stories in StoryList.stories and currentUser.ownStories', async () => {
   
       // length StoryList.stories and currentUser.ownStories before adding a story
-      const storiesLengthBefore = storyList.stories.length;
-      const ownStoriesLengthBefore = currentUser.ownStories.length;
+      const storiesLengthBefore = storiesMap.stories.size;
+      const ownStoriesLengthBefore = currentUser.ownStories.size;
   
-      story = await storyList.addStory(currentUser, storyData);
+      story = await storiesMap.addStory(currentUser, storyData);
   
       // length StoryList.stories and currentUser.ownStories after adding a story
-      const storiesLengthAfter = storyList.stories.length;
-      const ownStoriesLengthAfter = currentUser.ownStories.length;
+      const storiesLengthAfter = storiesMap.stories.size;
+      const ownStoriesLengthAfter = currentUser.ownStories.size;
   
       expect(storiesLengthBefore + 1).toEqual(storiesLengthAfter);
       expect(ownStoriesLengthBefore + 1).toEqual(ownStoriesLengthAfter);
     })
 
     it('should return a Story object with properties given in the storyData arg', async () => {
-      story = await storyList.addStory(currentUser, storyData);
+      story = await storiesMap.addStory(currentUser, storyData);
 
       ['title', 'author', 'url'].forEach(prop => {
         expect(story[prop]).toEqual(storyData[prop]);
@@ -65,24 +67,20 @@ describe('StoryList unit tests', () => {
 
     beforeEach( async() => {
       // add a story to remove
-      story = await storyList.addStory(currentUser, storyData);
+      story = await storiesMap.addStory(currentUser, storyData);
       storyId = story.storyId
     })
 
     it(`should remove the given story from StoryList.stories, currentUser.ownStories, and 
         currentUser.favorites`, async () => {
       // add story to user favorites
-      currentUser.favorites.push(story);
+      currentUser.favorites.set(storyId, story);
       
-      await storyList.removeStory(currentUser, storyId);
+      await storiesMap.removeStory(currentUser, storyId);
 
-      // get array of ids from story lists
-      const idsOf = (stories) => stories.map(s => s.storyId);
-
-      // ensure story lists don't contain removed story
-      [storyList.stories, currentUser.ownStories, currentUser.favorites].forEach(stories => {
-        expect(idsOf(stories)).not.toContain(storyId);
-      });
+      expect(storiesMap.stories.has(storyId)).toBe(false)
+      expect(currentUser.ownStories.has(storyId)).toBe(false)
+      expect(currentUser.favorites.has(storyId)).toBe(false)
      
     })
   })

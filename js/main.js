@@ -11,10 +11,10 @@ const $submittedStoriesList = $("#submitted-stories-list");
 
 const $loginForm = $("#login-form");
 const $signupForm = $("#signup-form");
-const $newStoryForm = $("#new-story-form");
+const $createOrUpdateStoryForm = $("#create-update-story-form");
 const $resetPasswordForm = $("#reset-password-form");
 
-const $navLogin = $("#nav-login");
+const $navLoginOrSignup = $("#nav-login-signup");
 const $navLogOut = $("#nav-logout");
 const $navUserProfile = $("#nav-user-profile");
 
@@ -37,7 +37,7 @@ function hidePageComponents() {
     $submittedStoriesList,
     $loginForm,
     $signupForm,
-    $newStoryForm,
+    $createOrUpdateStoryForm,
     $userProfile,
     $resetPasswordForm,
   ];
