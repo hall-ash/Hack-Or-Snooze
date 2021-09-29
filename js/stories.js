@@ -273,10 +273,9 @@ async function updateOrSubmitNewStory(evt) {
 
     if ($storySubmitBtn.text() === 'submit') {
       const newStory = await storiesMap.addStory(currentUser, storyData);
-
-      const $story = generateStoryMarkup(newStory); // generate story html
-      $allStoriesList.prepend($story); // add story to top of all-stories-list
       
+      const $newStory = generateStoryMarkup(newStory);
+      $allStoriesList.prepend($newStory);
     }
     else if ($storySubmitBtn.text() === 'update') {
 
@@ -289,7 +288,6 @@ async function updateOrSubmitNewStory(evt) {
 
       // reset story id data
       $createOrUpdateStoryForm.data('story-id', '');
-      
     }
     
     $createOrUpdateStoryForm.hide();
@@ -349,6 +347,12 @@ function putSubmittedStoriesOnPage(evt) {
   if (currentUser.ownStories.size) {
     for (const story of currentUser.ownStories.values()) {
       const $story = generateStoryMarkup(story);
+
+      // if story in favorites, display filled in star
+      if (currentUser.favorites.has(story.storyId)) {
+        $story.find('.favorite-story-star').toggleClass('bi-star bi-star-fill');
+      }
+
       $submittedStoriesList.append($story);
     }
   }
