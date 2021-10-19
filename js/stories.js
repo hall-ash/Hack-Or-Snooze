@@ -236,8 +236,15 @@ function putStoriesOnPage() {
 
   $allStoriesList.empty();
 
+  // sort stories with the lastest first
+  const storyList = [...storiesMap.stories.values()].sort((storyA, storyB) => {
+    const dateA = new Date(storyA.createdAt);
+    const dateB = new Date(storyB.createdAt);
+    return dateB - dateA;
+  });
+
   // loop through all of our stories and generate markups for them
-  for (const story of storiesMap.stories.values()) {
+  for (const story of storyList ) {
     const $story = generateStoryMarkup(story);
     $allStoriesList.append($story);
   }
@@ -254,6 +261,7 @@ function putStoriesOnPage() {
 async function updateOrSubmitNewStory(evt) {
   console.debug("updateOrSubmitNewStory", evt);
 
+  // don't submit like normal, 
   evt.preventDefault();
 
   const title = $("#story-title").val();
@@ -303,7 +311,7 @@ async function updateOrSubmitNewStory(evt) {
   }
 }
 
-$createOrUpdateStoryForm.on('click', 'button', updateOrSubmitNewStory);
+$createOrUpdateStoryForm.on('submit', updateOrSubmitNewStory);
 
 
 /**
